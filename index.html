@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="styles.css">
+      <!-- Firebase SDK -->
+      <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-app-compat.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/9.0.2/firebase-auth-compat.js"></script>
+</head>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        background-color: #ffe4e6;
+        color: #333;
+        text-align: center;
+        padding-top: 90px;
+    }
+    .header {
+        background-color: #fff;
+        padding: 10px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    .profile-img {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        border: 5px solid #ff6f91;
+        object-fit: cover;
+        margin-bottom: 20px;
+    }
+    .login {
+        max-width: 400px;
+        margin: 2rem auto;
+    }
+    .login label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+        color: #333;
+    }
+    .login input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .login input:focus {
+        outline: none;
+        border-color: #ff6f91;
+        box-shadow: 0 0 6px rgba(255, 111, 145, 0.4);
+    }
+    .login button {
+        width: 100%;
+        padding: 0.75rem;
+        margin-top: 1rem;
+        font-size: 1rem;
+        font-weight: bold;
+        color: #fff;
+        background: linear-gradient(45deg, #ff6f91, #ff8e53);
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.3s;
+    }
+    .login button:hover {
+        box-shadow: 0 8px 15px rgba(255, 111, 145, 0.4);
+        transform: translateY(-2px);
+    }
+    .login button:active {
+        box-shadow: 0 4px 10px rgba(253, 65, 109, 0.3);
+        transform: translateY(0);
+    }
+</style>
+<body>
+    <div class="main-profile">
+        <img src="image/profile.jpg" alt="Profile" class="profile-img">
+    </div>
+
+    <div class="login">
+        <form id="loginForm">
+            <label for="email">อีเมล</label>
+            <input type="email" id="email" name="email" placeholder="กรอกอีเมล" required>
+
+            <label for="password">รหัสผ่าน</label>
+            <input type="password" id="password" name="password" placeholder="กรอกรหัสผ่าน" required>
+
+            <button type="submit" id="loginButton">เข้าสู่ระบบ</button>
+            <button type="button" id="GoToregister">ลงทะเบียน</button>
+            <div id="login-result" class="login-result"></div>
+        </form>
+    </div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+    apiKey: "AIzaSyDewrVm04qSeGRwk64EkhjT7KOclBdEIK0",
+    authDomain: "ipuetdatabase.firebaseapp.com",
+    projectId: "ipuetdatabase",
+    storageBucket: "ipuetdatabase.appspot.com",
+    messagingSenderId: "723152384478",
+    appId: "1:723152384478:web:26cc240802e16c7af4ed4f",
+    measurementId: "G-GFR7ZPGJNH"
+  };
+
+  // Initialize Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+
+  // Initialize Firebase Auth
+  const auth = firebase.auth();
+
+          // Constants for login attempts
+    const MAX_ATTEMPTS = 3;
+    let loginAttempts = JSON.parse(localStorage.getItem('loginAttempts')) || {};
+
+    // Form and result elements
+    const form = document.getElementById("loginForm");
+    const resultDiv = document.getElementById("login-result");
+
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        // Check login attempts
+        if (!loginAttempts[email]) loginAttempts[email] = 0;
+
+        if (loginAttempts[email] >= MAX_ATTEMPTS) {
+            resultDiv.textContent = "คุณล็อกอินผิดเกิน 3 ครั้ง! บัญชีถูกล็อก.";
+            resultDiv.style.color = "red";
+            return;
+        }
+
+        try {
+            // Attempt to log in
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            resultDiv.textContent = "เข้าสู่ระบบสำเร็จ!";
+            resultDiv.style.color = "green";
+
+            // Reset login attempts
+            loginAttempts[email] = 0;
+            localStorage.setItem('loginAttempts', JSON.stringify(loginAttempts));
+            setTimeout(() => {
+                window.location.href = "loading.html";
+            }, 2000);
+            // Redirect to another page
+            setTimeout(() => {
+                window.location.href = "home.html";
+            }, 3000);
+
+        } catch (error) {
+            // Increment login attempts
+            loginAttempts[email] = (loginAttempts[email] || 0) + 1;
+            localStorage.setItem('loginAttempts', JSON.stringify(loginAttempts));
+
+            if (loginAttempts[email] >= MAX_ATTEMPTS) {
+                resultDiv.textContent = "คุณล็อกอินผิดเกิน 3 ครั้ง! บัญชีถูกล็อก.";
+                resultDiv.style.color = "red";
+
+                // Auto-unlock after 5 minutes
+                setTimeout(() => {
+                    loginAttempts[email] = 0;
+                    localStorage.setItem('loginAttempts', JSON.stringify(loginAttempts));
+                    alert("บัญชีของคุณปลดล็อกแล้ว!");
+                }, 300000); // 300,000 ms = 5 minutes
+            } else {
+                resultDiv.textContent = `ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง! (${loginAttempts[email]} / ${MAX_ATTEMPTS})`;
+                resultDiv.style.color = "red";
+            }
+        }
+    });
+        document.getElementById('GoToregister').addEventListener('click', function () {
+            window.location.href = "register.html";
+        });
+
+    </script>
+    
+</body>
+</html>
+
+
